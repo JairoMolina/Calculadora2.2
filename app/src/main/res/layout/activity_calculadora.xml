@@ -3,7 +3,8 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="#2F4F4F"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:padding="8dp">
 
     <!-- Top Section with display -->
 
@@ -11,10 +12,48 @@
 
     <!-- Middle Section (5x2 buttons) -->
 
+
     <Spinner
         android:id="@+id/spinner_Integrales"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp" />
+
+    <!-- Límites de integración -->
+    <LinearLayout
+        android:id="@+id/layoutLimites"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="8dp"
+        android:visibility="visible">
+
+        <EditText
+            android:id="@+id/etLimiteInferior"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
+            android:layout_weight="1"
+            android:backgroundTint="#297373"
+            android:hint="Límite inferior"
+            android:inputType="numberDecimal|numberSigned"
+            android:textColor="@color/black"
+            android:textColorHint="#808080"
+            android:visibility="visible" />
+
+        <EditText
+            android:id="@+id/etLimiteSuperior"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_weight="1"
+            android:backgroundTint="#297373"
+            android:hint="Límite superior"
+            android:inputType="numberDecimal|numberSigned"
+            android:textColor="@color/black"
+            android:textColorHint="#808080" />
+
+    </LinearLayout>
 
     <TextView
         android:id="@+id/txtPantalla"
@@ -28,6 +67,7 @@
         android:textAlignment="textEnd"
         android:textColor="@color/black"
         android:textSize="34sp" />
+
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -355,7 +395,7 @@
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="0dp"
+                android:layout_height="2dp"
                 android:layout_weight="1"
                 android:orientation="horizontal">
 

@@ -1,24 +1,41 @@
 package gt.edu.umg.mycalculator;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import gt.edu.umg.mycalculator.Metodos.AreaBajoCurva.LogicaAreaBajoCurva;
+import gt.edu.umg.mycalculator.Metodos.CentroidesyCentroides.LogicaCentroides;
+import gt.edu.umg.mycalculator.Metodos.Definidas.LogicaDefinidas;
+
 public class CalculadoraActivity extends AppCompatActivity {
+    private LinearLayout layoutLimites;
+    private EditText etlimiteInferior, etLimiteSuperior;
+    private TextView txtPantalla;
+    private Spinner spinner_Integrales;
+    private int meotodosSeleccion=0;
+    private String funcionActual="";
+    private int metodoSeleccionado = 0;
+
+
     @Override
     protected void onCreate(Bundle savedIntanceState) {
         super.onCreate(savedIntanceState);
         setContentView(R.layout.activity_calculadora);
 
-        Spinner spinnerintegrales = findViewById(R.id.spinner_Integrales);
+       Spinner spinner_Integrales = findViewById(R.id.spinner_Integrales);
 
         Button btnRegresarcalcu = findViewById(R.id.btnRegresarcalcu);
         Button btn1 = findViewById(R.id.btn1);
@@ -56,6 +73,10 @@ public class CalculadoraActivity extends AppCompatActivity {
         Button btnInfinito = findViewById(R.id.btnInfinito);
         Button btnFlecha = findViewById(R.id.btnFlecha);
         Button btnDX = findViewById(R.id.btnDx);
+        layoutLimites = findViewById(R.id.layoutLimites);
+        etlimiteInferior = findViewById(R.id.etLimiteInferior);
+        etLimiteSuperior = findViewById(R.id.etLimiteSuperior);
+
 
         btnRegresarcalcu.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -106,28 +127,29 @@ public class CalculadoraActivity extends AppCompatActivity {
         btnIgual.setOnClickListener(v -> {
             String expresion = txtPantalla.getText().toString();
             if (!expresion.isEmpty()) {
-                try {
-                    Calculadora.setValorX(1);
-                    Calculadora.setValorY(1);
+                // Verificar si hay un método seleccionado en el spinner
+                if (spinner_Integrales.getSelectedItemPosition() > 0) {  // 0 sería "Seleccione un método" o el primer item
+                    // Si hay un método seleccionado, mostrar diálogo de límites
+                    mostrarDialogoLimites();
 
-                    double resultado = Calculadora.evaluar(expresion);
-                    if (Double.isNaN(resultado)) {
+                    // Si no hay método seleccionado, realizar cálculo normal
+                    try {
+                        double limInf = Double.parseDouble(etlimiteInferior.getText().toString());
+                        double limSup = Double.parseDouble(etLimiteSuperior.getText().toString());
+                        calcularSegunMetodo(expresion, limInf, limSup);
+                    } catch (NumberFormatException e) {
                         Toast.makeText(CalculadoraActivity.this,
-                                "Expresión matemática inválida",
-                                Toast.LENGTH_SHORT).show();
-                    } else {
-                        String resultadoStr;
-                        if (resultado == (long) resultado) {
-                            resultadoStr = String.format("%d", (long) resultado);
-                        } else {
-                            resultadoStr = String.format("%.8f", resultado);
-                        }
-                        txtPantalla.setText(resultadoStr);
+                                "Ingrese límites válidos", Toast.LENGTH_SHORT).show();
                     }
-                } catch (Exception e) {
-                    Toast.makeText(CalculadoraActivity.this,
-                            "Error en la expresión",
-                            Toast.LENGTH_SHORT).show();
+                }else {
+                    try{
+                        Calculadora.setValorX(1);
+                        Calculadora.setValorY(1);
+                    }catch (Exception e){
+                        Toast.makeText(CalculadoraActivity.this,
+                                "Error en el cálculo", Toast.LENGTH_SHORT).show();
+                    }
+
                 }
             }
         });
@@ -142,22 +164,25 @@ public class CalculadoraActivity extends AppCompatActivity {
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
                 R.array.opciones_integrales, android.R.layout.simple_spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerintegrales.setAdapter(adapter);
+        spinner_Integrales.setAdapter(adapter);
 
 
-        spinnerintegrales.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        spinner_Integrales.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
+                metodoSeleccionado = position;
+                layoutLimites.setVisibility(position > 0 ? View.VISIBLE : View.GONE);
                 String seleccion = parentView.getItemAtPosition(position).toString();
                 Toast.makeText(getApplicationContext(), "Seleccionado: " + seleccion, Toast.LENGTH_SHORT).show();
-                // Aquí puedes manejar cada opción seleccionada
             }
 
             @Override
             public void onNothingSelected(AdapterView<?> parentView) {
-                // Código cuando no se selecciona nada
+                metodoSeleccionado = 0;
+                layoutLimites.setVisibility(View.GONE);
             }
         });
+
 
     }
     private static class Calculadora {
@@ -289,6 +314,82 @@ public class CalculadoraActivity extends AppCompatActivity {
             } catch (NumberFormatException e) {
                 throw new RuntimeException("Expresión inválida: " + expresion);
             }
+
+        }
+
+
+    }
+    private void mostrarDialogoLimites() {
+        View view = getLayoutInflater().inflate(R.layout.activity_calculadora, null);
+        EditText etLimInf = view.findViewById(R.id.etLimiteInferior);
+        EditText etLimSup = view.findViewById(R.id.etLimiteSuperior);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Ingrese los límites")
+                .setView(view)
+                .setPositiveButton("Calcular", (dialog, which) -> {
+                    try {
+                        double limInf = Double.parseDouble(etLimInf.getText().toString());
+                        double limSup = Double.parseDouble(etLimSup.getText().toString());
+                        calcularSegunMetodo(funcionActual, limInf, limSup);
+                    } catch (NumberFormatException e) {
+                        Toast.makeText(this, "Límites inválidos", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("Cancelar", null)
+                .show();
+    }
+
+    private void calcularSegunMetodo(String funcion, double limInf, double limSup) {
+        try {
+            switch (metodoSeleccionado) {
+                case 0: // Área Bajo la Curva
+                    LogicaAreaBajoCurva.ResultadoAreaBajoCurva resultado =
+                            LogicaAreaBajoCurva.calcularArea(funcion, limInf, limSup);
+                    if (resultado.exito) {
+                        txtPantalla.setText(String.format("Área = %.4f", resultado.area));
+                    } else {
+                        mostrarError(resultado.mensaje);
+                    }
+                    break;
+
+                case 1: // Centroides
+                    LogicaCentroides.ResultadoCentroides resultadoCent =
+                            LogicaCentroides.calcularCentroides(funcion, limInf, limSup);
+                    if (resultadoCent.exito) {
+                        txtPantalla.setText(String.format("Centro de masa:\nX̄ = %.4f\nȲ = %.4f",
+                                resultadoCent.xBar, resultadoCent.yBar));
+                    } else {
+                        mostrarError(resultadoCent.mensaje);
+                    }
+                    break;
+
+                case 2: // Definidas
+                    LogicaDefinidas.ResultadoIntegral resultadoDef =
+                            LogicaDefinidas.integrar(funcion, limInf, limSup,0,0, "x");
+                    if (resultadoDef.exito) {
+                        txtPantalla.setText(String.format("Integral = %.4f", resultadoDef.valor));
+                    } else {
+                        mostrarError(resultadoDef.mensaje);
+                    }
+                    break;
+
+                // Agregar los demás casos según los métodos que adaptamos
+
+                default:
+                    mostrarError("Método no implementado aún");
+                    break;
+            }
+        } catch (Exception e) {
+            mostrarError("Error en el cálculo: " + e.getMessage());
         }
     }
+
+    private void mostrarError(String mensaje) {
+        Toast.makeText(this, mensaje, Toast.LENGTH_LONG).show();
+    }
+
+
+
+
 }
