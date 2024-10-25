@@ -9,10 +9,15 @@
     </string>
 
     <string-array name="opciones_integrales">
+        <item>Seleccione un método</item>
         <item>Área bajo la curva</item>
-        <item>Por partes</item>
-        <item>Masas y centroides</item>
-        <item>Por Sustitucion</item>>
+        <item>Integrales definidas</item>
+        <item>Integrales impropias</item>
+        <item>Integración por partes</item>
+        <item>Valor promedio de la función</item>
+        <item>Integración por sustitución</item>
+        <item>Integrales trigonométricas</item>
+        <item>Sólidos de revolución</item>
     </string-array>
 
 </resources>
