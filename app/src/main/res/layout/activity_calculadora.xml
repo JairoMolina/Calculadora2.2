@@ -26,10 +26,11 @@
             android:layout_weight="1"
             android:backgroundTint="#297373"
             android:hint="Límite inferior"
-            android:inputType="numberDecimal|numberSigned"
+            android:inputType="text"
             android:textColor="@color/black"
             android:textColorHint="#808080"
             android:visibility="visible" />
+
         <EditText
             android:id="@+id/etLimiteSuperior"
             android:layout_width="0dp"
@@ -38,7 +39,7 @@
             android:layout_weight="1"
             android:backgroundTint="#297373"
             android:hint="Límite superior"
-            android:inputType="numberDecimal|numberSigned"
+            android:inputType="text"
             android:textColor="@color/black"
             android:textColorHint="#808080" />
     </LinearLayout>

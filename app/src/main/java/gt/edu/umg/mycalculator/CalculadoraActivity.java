@@ -17,6 +17,9 @@ import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import gt.edu.umg.mycalculator.Metodos.AreaBajoCurva.LogicaAreaBajoCurva;
 import gt.edu.umg.mycalculator.Metodos.CentroidesyCentroides.LogicaCentroides;
 import gt.edu.umg.mycalculator.Metodos.Definidas.LogicaDefinidas;
@@ -41,6 +44,8 @@ public class CalculadoraActivity extends AppCompatActivity {
         configurarListeners();
         // Configuración del Spinner
         configurarSpinner();
+        configurarEditTextLimites();
+
 
 
 
@@ -198,19 +203,26 @@ public class CalculadoraActivity extends AppCompatActivity {
     }
 
     private void configurarBotonesOperaciones() {
-        // Configurar cada botón de operación matemática
-        configurarBotonOperacion(R.id.btnX, "x");
-        configurarBotonOperacion(R.id.btnY, "y");
-        configurarBotonOperacion(R.id.btnElevar, "^");
-        configurarBotonOperacion(R.id.btnParentesis1, "(");
-        configurarBotonOperacion(R.id.btnParentesis2, ")");
-        configurarBotonOperacion(R.id.btnSeno, "sen");
-        configurarBotonOperacion(R.id.btnCoseno, "cos");
-        configurarBotonOperacion(R.id.btnMulti, "*");
-        configurarBotonOperacion(R.id.btnSuma, "+");
-        configurarBotonOperacion(R.id.btnResta, "-");
-        configurarBotonOperacion(R.id.btnDivision, "/");
-        configurarBotonOperacion(R.id.btnPunto, ".");
+        Map<Integer, String> operaciones = new HashMap<>();
+        operaciones.put(R.id.btnX, "x");
+        operaciones.put(R.id.btnY, "y");
+        operaciones.put(R.id.btnElevar, "^");
+        operaciones.put(R.id.btnParentesis1, "(");
+        operaciones.put(R.id.btnParentesis2, ")");
+        operaciones.put(R.id.btnSeno, "sen");
+        operaciones.put(R.id.btnCoseno, "cos");
+        operaciones.put(R.id.btnMulti, "*");
+        operaciones.put(R.id.btnSuma, "+");
+        operaciones.put(R.id.btnResta, "-");
+        operaciones.put(R.id.btnDivision, "/");
+        operaciones.put(R.id.btnEuler, "e");
+        operaciones.put(R.id.btnPunto, ".");
+
+        for (Map.Entry<Integer, String> entrada : operaciones.entrySet()) {
+            Button boton = findViewById(entrada.getKey());
+            String operacion = entrada.getValue();
+            boton.setOnClickListener(v -> txtPantalla.append(operacion));
+        }
     }
 
     private void configurarBotonOperacion(int idBoton, String operacion) {
@@ -239,34 +251,109 @@ public class CalculadoraActivity extends AppCompatActivity {
     }
 
     private void calcular() {
-        funcionActual = txtPantalla.getText().toString();
-        if (funcionActual.isEmpty()) {
-            mostrarError("Ingrese una función");
-            return;
-        }
+        try {
+            funcionActual = txtPantalla.getText().toString();
+            if (funcionActual.isEmpty()) {
+                mostrarError("Ingrese una función");
+                return;
+            }
 
-        if (metodoSeleccionado > 0) {
-            try {
-                String limInfStr = etlimiteInferior.getText().toString();
-                String limSupStr = etLimiteSuperior.getText().toString();
+            if (metodoSeleccionado > 0) {
+                String limInfStr = etlimiteInferior.getText().toString().trim();
+                String limSupStr = etLimiteSuperior.getText().toString().trim();
 
                 if (limInfStr.isEmpty() || limSupStr.isEmpty()) {
                     mostrarError("Ingrese ambos límites");
                     return;
                 }
+// Añadir logs para depuración
+                Log.d("Calculadora", "Función ingresada: " + funcionActual);
+                Log.d("Calculadora", "Límite inferior: " + limInfStr);
+                Log.d("Calculadora", "Límite superior: " + limSupStr);
 
-                double limInf = Double.parseDouble(limInfStr);
-                double limSup = Double.parseDouble(limSupStr);
+                double limInf, limSup;
 
+                // Manejar límite inferior
+                if (limInfStr.equals("∞")) {
+                    limInf = Double.POSITIVE_INFINITY;
+                } else if (limInfStr.equals("-∞")) {
+                    limInf = Double.NEGATIVE_INFINITY;
+                } else {
+                    try {
+                        limInf = Double.parseDouble(limInfStr);
+                    } catch (NumberFormatException e) {
+                        mostrarError("Límite inferior inválido");
+                        return;
+                    }
+                }
+
+                // Manejar límite superior
+                if (limSupStr.equals("∞")) {
+                    limSup = Double.POSITIVE_INFINITY;
+                } else if (limSupStr.equals("-∞")) {
+                    limSup = Double.NEGATIVE_INFINITY;
+                } else {
+                    try {
+                        limSup = Double.parseDouble(limSupStr);
+                    } catch (NumberFormatException e) {
+                        mostrarError("Límite superior inválido");
+                        return;
+                    }
+                }
+
+                Log.d("Calculadora", "Límite inferior procesado: " + limInf);
+                Log.d("Calculadora", "Límite superior procesado: " + limSup);
+
+                // Validaciones adicionales
+                if (limInf >= limSup && !Double.isInfinite(limInf) && !Double.isInfinite(limSup)) {
+                    mostrarError("El límite inferior debe ser menor que el superior");
+                    return;
+                }
+
+                // Llamar al método de cálculo
                 calcularSegunMetodo(funcionActual, limInf, limSup);
-            } catch (NumberFormatException e) {
-                mostrarError("Límites inválidos");
+            } else {
+                mostrarError("Seleccione un método de integración");
             }
-        } else {
-            // Si no hay método seleccionado, mostrar mensaje
-            mostrarError("Seleccione un método de integración");
+        } catch (Exception e) {
+            Log.e("Calculadora", "Error en cálculo", e);
+            mostrarError("Error en el cálculo: " + e.getMessage());
         }
     }
+
+    private void configurarEditTextLimites() {
+        // Configurar el botón de infinito para que escriba en el EditText activo
+        Button btnInfinito = findViewById(R.id.btnInfinito);
+        btnInfinito.setOnClickListener(v -> {
+            if (etlimiteInferior.hasFocus()) {
+                etlimiteInferior.setText("∞");
+            } else if (etLimiteSuperior.hasFocus()) {
+                etLimiteSuperior.setText("∞");
+            }
+        });
+
+        // Configurar el botón de menos para poder escribir -∞
+        Button btnResta = findViewById(R.id.btnResta);
+        View.OnClickListener restaListener = v -> {
+            if (etlimiteInferior.hasFocus()) {
+                String texto = etlimiteInferior.getText().toString();
+                if (texto.equals("∞")) {
+                    etlimiteInferior.setText("-∞");
+                } else {
+                    etlimiteInferior.setText("-");
+                }
+            } else if (etLimiteSuperior.hasFocus()) {
+                String texto = etLimiteSuperior.getText().toString();
+                if (texto.equals("∞")) {
+                    etLimiteSuperior.setText("-∞");
+                } else {
+                    etLimiteSuperior.setText("-");
+                }
+            }
+        };
+        btnResta.setOnClickListener(restaListener);
+    }
+
     static class Calculadora {
         private static double valorX = 0;
         private static double valorY = 0;
@@ -417,9 +504,8 @@ public class CalculadoraActivity extends AppCompatActivity {
     }
     private void calcularSegunMetodo(String funcion, double limInf, double limSup) {
         try {
-            // Log para debug
-            Log.d("Calculadora", "Función a evaluar: " + funcion);
-            Log.d("Calculadora", "Límites: " + limInf + " a " + limSup);
+            Log.d("Calculadora", "Iniciando cálculo según método");
+            Log.d("Calculadora", "Método seleccionado: " + metodoSeleccionado);
 
             double resultado = 0;
             switch (metodoSeleccionado) {
@@ -440,17 +526,15 @@ public class CalculadoraActivity extends AppCompatActivity {
                     return;
             }
 
-            // Log del resultado
-            Log.d("Calculadora", "Resultado: " + resultado);
-
-            if (Double.isNaN(resultado)) {
-                mostrarError("Error en el cálculo. Verifique la función y los límites.");
+            if (Double.isNaN(resultado) || Double.isInfinite(resultado)) {
+                mostrarError("La integral no converge o hay un error en el cálculo");
                 return;
             }
 
             mostrarResultado(resultado);
+
         } catch (Exception e) {
-            Log.e("Calculadora", "Error en el cálculo", e);
+            Log.e("Calculadora", "Error en calcularSegunMetodo", e);
             mostrarError("Error en el cálculo: " + e.getMessage());
         }
     }
